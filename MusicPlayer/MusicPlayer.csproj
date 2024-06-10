@@ -9,17 +9,6 @@
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
-  
-  <ItemGroup>
-    <AvaloniaXaml Remove="NewFolder1\**" />
-    <AvaloniaXaml Remove="NewFolder\**" />
-    <Compile Remove="NewFolder1\**" />
-    <Compile Remove="NewFolder\**" />
-    <EmbeddedResource Remove="NewFolder1\**" />
-    <EmbeddedResource Remove="NewFolder\**" />
-    <None Remove="NewFolder1\**" />
-    <None Remove="NewFolder\**" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
@@ -29,8 +18,15 @@
     <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
     <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="$(AvaloniaVersion)" />
     <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="TagLibSharp" Version="2.3.0" />
     <PackageReference Include="YoutubeExplode" Version="6.3.16" />
     <PackageReference Include="YoutubeExplode.Converter" Version="6.3.16" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Update="Assets\DefaultCover.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </AvaloniaResource>
   </ItemGroup>
 
   <ItemGroup>

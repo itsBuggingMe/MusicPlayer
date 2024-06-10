@@ -15,6 +15,8 @@ namespace MusicPlayer
 
         public bool IsPlaying { get; private set; } = false;
 
+        public double Volume { get => waveOutEvent.Volume; set => waveOutEvent.Volume = (float)value; }
+
         private readonly AudioFileReader reader;
         private bool disposedValue;
 
@@ -26,14 +28,29 @@ namespace MusicPlayer
         {
             reader = new AudioFileReader(path);
             FilePlayed += OnFilePlayed;
+            waveOutEvent.PlaybackStopped += WaveOutEvent_PlaybackStopped;
         }
+
+        private void WaveOutEvent_PlaybackStopped(object? sender, StoppedEventArgs e)
+            => IsPlaying = false;
+        private void OnFilePlayed()
+            => IsPlaying = false;
 
         public void Pause()
         {
             if(reader == CurrentlyLoaded)
-            {
                 waveOutEvent.Pause();
-            }
+        }
+
+        public void Reset()
+        {
+            if (reader == CurrentlyLoaded)
+                waveOutEvent.Stop();
+        }
+
+        public void Scrub(double portion)
+        {
+            throw new NotImplementedException();
         }
 
         public void Play()
@@ -52,11 +69,7 @@ namespace MusicPlayer
             }
         }
 
-        private void OnFilePlayed()
-        {
-            IsPlaying = false;
-        }
-
+        #region Disposing
         protected virtual void Dispose(bool disposing)
         {
             if (!disposedValue)
@@ -70,6 +83,7 @@ namespace MusicPlayer
                     }
                     reader?.Dispose();
                     FilePlayed -= OnFilePlayed;
+                    waveOutEvent.PlaybackStopped -= WaveOutEvent_PlaybackStopped;
                 }
 
                 disposedValue = true;
@@ -81,5 +95,6 @@ namespace MusicPlayer
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
+        #endregion
     }
 }

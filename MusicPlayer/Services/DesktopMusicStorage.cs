@@ -2,24 +2,24 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 using YoutubeExplode;
 using YoutubeExplode.Converter;
 using YoutubeExplode.Videos;
 using YoutubeExplode.Common;
 using System.Net.Http;
-using ReactiveUI;
-using Avalonia.Media.Imaging;
+using TagFile = TagLib.File;
 
 namespace MusicPlayer.Services
 {
     public class DesktopMusicSource : IMusicSource//TODO: Implement IDisposable
     {
-        private static string SubPath => "data";
+        private static string SubPath => "DesktopData";
         private YoutubeClient _client;
         private HttpClient _http;
         private readonly Task[] _taskArr = new Task[2];
+
+        private List<SongData> _songCache = new();
 
         public DesktopMusicSource()
         {
@@ -29,17 +29,20 @@ namespace MusicPlayer.Services
 
         public IEnumerable<SongData> GetMusicFiles()
         {
-            foreach(string dir in EnumerateDirs())
+            foreach(string path in EnumerateFiles())
             {
-                foreach(string path in Directory.EnumerateFiles(dir))
+                if (path.EndsWith(".mp3"))
                 {
-                    if (path.EndsWith(".mp3"))
-                    {
-                        ReadOnlySpan<char> p = Path.GetFileName(dir.AsSpan())[..^4];
+                    TagFile f = TagFile.Create(path);
 
-                        string s = new string(p);
-                        yield return new SongData(new SongMetaData(), new NAudioFile(path));
-                    }
+                    string s = new string(Path.GetFileName(path.AsSpan())[..^4]);
+                    SongMetaData metaData = new SongMetaData(
+                        f.Tag.Title, 
+                        f.Tag.AlbumArtists.FirstOrDefault() ?? string.Empty,
+                        TimeSpan.Parse(f.Tag.Length),
+                        s);
+
+                    yield return new SongData(metaData, new NAudioFile(path));
                 }
             }
         }
@@ -59,22 +62,22 @@ namespace MusicPlayer.Services
             CreateIfNotExist();
 
             VideoId id = VideoId.Parse(location.AbsoluteUri);
-            string path = Path.Combine(SubPath, id, "audio.mp3");
-            string thPath = Path.Combine(SubPath, id, "img.png");
-            string dir = Path.Combine(SubPath, id);
-            string meta = Path.Combine(SubPath, id);
+            string path = Path.Combine(SubPath, $"{id}.mp3");
+            string thPath = Path.Combine(SubPath, $"{id}.png");
 
-            if (EnumerateDirs().Any(p => p.Contains(id.Value)))
+            if (EnumerateFiles().Any(p => p == path))
             {
                 return path;
             }
 
-            Directory.CreateDirectory(dir);
+            Task<(Video, HttpResponseMessage)> thumbnail;
 
-            Task<HttpResponseMessage> thumbnail;
             _taskArr[0] = thumbnail = _client.Videos.GetAsync(id).AsTask()
                 //get metadata & download
-                .ContinueWith(async t => await _http.GetAsync((await t).Thumbnails.GetWithHighestResolution().Url)).Unwrap();
+                .ContinueWith(async t => {
+                    var tmp = await t;
+                    return (tmp, await _http.GetAsync(tmp.Thumbnails.GetWithHighestResolution().Url));
+                    }).Unwrap();
 
             _taskArr[1] = _client.Videos.DownloadAsync(id, path, o => o
                     .SetContainer("mp3")
@@ -84,25 +87,30 @@ namespace MusicPlayer.Services
 
             await Task.WhenAll(_taskArr);
 
-            HttpResponseMessage msg = await thumbnail;
-            Stream s = msg.Content.ReadAsStream();
+            var msg = await thumbnail;
+            Stream s = msg.Item2.Content.ReadAsStream();
 
             using (var fileStream = File.Create(thPath))
             {
                 s.Seek(0, SeekOrigin.Begin);
                 s.CopyTo(fileStream);
             }
+            GetArtistTitle(msg.Item1.Title, out var a, out var t);
 
-            File.WriteAllText();
+            TagFile f = TagFile.Create(path);
+            f.Tag.Title = t;
+            f.Tag.AlbumArtists = [a];
+            f.Tag.Length = msg.Item1.Duration.ToString();
+            f.Save();
 
             return path;
         }
 
-        private IEnumerable<string> EnumerateDirs()
+        private IEnumerable<string> EnumerateFiles()
         {
             if (CreateIfNotExist())
             {
-                return Directory.EnumerateDirectories(SubPath);
+                return Directory.EnumerateFiles(SubPath);
             }
 
             return [];
@@ -121,7 +129,20 @@ namespace MusicPlayer.Services
         //Here, we just assume its in the format of Author - Title
         private void GetArtistTitle(string input, out string author, out string title)
         {
+            const string Unknown = "Unknown";
+            string[] sections = input.Split('-');
+            author = Unknown;
+            title = Unknown;
 
+            if (sections.Length > 0)
+            {
+                author = sections[0].Trim();
+            }
+
+            if(sections.Length > 1)
+            {
+                title = sections[1].Trim();
+            }
         }
     }
 }

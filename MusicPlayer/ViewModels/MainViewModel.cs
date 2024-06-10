@@ -1,9 +1,17 @@
-﻿namespace MusicPlayer.ViewModels
+﻿using Avalonia.Media.Imaging;
+using Avalonia.Platform;
+using System;
+
+namespace MusicPlayer.ViewModels
 {
     public class MainViewModel : ViewModelBase
     {
-#pragma warning disable CA1822 // Mark members as static
-        public string Greeting => "Welcome to Avalonia!";
-#pragma warning restore CA1822 // Mark members as static
+        public Bitmap? CurrentAlbumImage { get; } = new Bitmap(AssetLoader.Open(new Uri(
+            "avares://"
+            )));
+
+        public MainViewModel()
+        {
+        }
     }
 }
