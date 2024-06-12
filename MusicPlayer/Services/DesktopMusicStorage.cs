@@ -9,6 +9,7 @@ using YoutubeExplode.Videos;
 using YoutubeExplode.Common;
 using System.Net.Http;
 using TagFile = TagLib.File;
+using MusicPlayer.Models;
 
 namespace MusicPlayer.Services
 {
@@ -40,7 +41,8 @@ namespace MusicPlayer.Services
                         f.Tag.Title, 
                         f.Tag.AlbumArtists.FirstOrDefault() ?? string.Empty,
                         TimeSpan.Parse(f.Tag.Length),
-                        s);
+                        s,
+                        new Avalonia.Media.Imaging.Bitmap(Path.Combine(SubPath, $"{s}.png")));
 
                     yield return new SongData(metaData, new NAudioFile(path));
                 }

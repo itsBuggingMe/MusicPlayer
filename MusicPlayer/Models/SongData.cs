@@ -4,8 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MusicPlayer
+namespace MusicPlayer.Models
 {
     public record class SongData(SongMetaData Metadata, IAudioFile Audio);
-    public record class SongMetaData(string Title, string Author, TimeSpan Length, string VideoID);
 }

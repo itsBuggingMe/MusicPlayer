@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MusicPlayer
+namespace MusicPlayer.Models
 {
     public class NAudioFile : IAudioFile
     {
@@ -38,7 +38,7 @@ namespace MusicPlayer
 
         public void Pause()
         {
-            if(reader == CurrentlyLoaded)
+            if (reader == CurrentlyLoaded)
                 waveOutEvent.Pause();
         }
 
@@ -57,8 +57,9 @@ namespace MusicPlayer
         {
             lock (waveOutEvent)
             {
-                if(CurrentlyLoaded != reader)
+                if (CurrentlyLoaded != reader)
                 {
+                    waveOutEvent.Stop();
                     waveOutEvent.Init(reader);
                     CurrentlyLoaded = reader;
                 }

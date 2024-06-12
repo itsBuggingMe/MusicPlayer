@@ -3,6 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:MusicPlayer.ViewModels"
+             xmlns:dialogHost="clr-namespace:DialogHostAvalonia;assembly=DialogHost.Avalonia"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="MusicPlayer.Views.MainView"
              x:DataType="vm:MainViewModel">
@@ -11,16 +12,51 @@
          to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
     <vm:MainViewModel />
   </Design.DataContext>
-	<Grid ShowGridLines="True">
-		<Grid.RowDefinitions>
-			<RowDefinition Height="*"></RowDefinition>
-			<RowDefinition Height="64"></RowDefinition>
-		</Grid.RowDefinitions>
-		<Grid.ColumnDefinitions>
-			<ColumnDefinition Width="128"></ColumnDefinition>
-			<ColumnDefinition Width="*"></ColumnDefinition>
-		</Grid.ColumnDefinitions>
 
-		<Image Grid.Row="0" Grid.Column="1" Source="avares://MusicPlayer/Assets/DefaultCover.png"/>
-	</Grid>
+  <dialogHost:DialogHost IsOpen="{Binding IsDialogOpen}" CloseOnClickAway="True" DisableOpeningAnimation="True">
+    <dialogHost:DialogHost.DialogContent>
+      <StackPanel Width="380">
+        <TextBlock>Enter Youtube URL:</TextBlock>
+        <TextBox Watermark="https://www.youtube.com/watch?v=dQw4w9WgXcQ" Text="{Binding YoutubeUrl}">
+          <TextBox.KeyBindings>
+            <KeyBinding Command="{Binding ExitDialog}" Gesture="Enter"/>
+          </TextBox.KeyBindings>
+        </TextBox>
+      </StackPanel>
+    </dialogHost:DialogHost.DialogContent>
+    <Grid>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="6*"/>
+        <RowDefinition Height="*"/>
+      </Grid.RowDefinitions>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*"/>
+        <ColumnDefinition Width="6*"/>
+      </Grid.ColumnDefinitions>
+
+      <Image Grid.Row="0" Grid.Column="1" Source="{Binding CurrentAlbumCover}"/>
+      <Button Grid.Row="1" Grid.Column="0" Content="Add Song" Command="{Binding AddSongCommand}"
+              HorizontalAlignment="Stretch" VerticalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+              FontSize="20"/>
+      <ScrollViewer Grid.Row="0" Grid.Column="0">
+        <ItemsControl ItemsSource="{Binding Cards}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate DataType="vm:SongCardViewModel">
+              <Button HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding Command}">                
+                <Button.Content>
+                  <StackPanel>
+                    <TextBlock FontSize="18" TextWrapping="Wrap" Margin="10" TextAlignment="Center" Text="{Binding Title}"/>
+                    <StackPanel Orientation="Horizontal">
+                      <Image Source="{Binding Icon}" Width="64" Height="64"/>
+                      <TextBlock FontSize="14" TextWrapping="Wrap" Margin="10" TextAlignment="Center" FontStyle="Italic" Text="{Binding Artist}"/>
+                    </StackPanel>
+                  </StackPanel>
+                </Button.Content>
+              </Button>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+    </Grid>
+  </dialogHost:DialogHost>
 </UserControl>
